@@ -30,9 +30,13 @@ void BarcodeScanner::decode(const Mat &im)
 
     // Configure scanner
     scanner.set_config(ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
+	
+	// Convert to grayscale
+	Mat img;
+	cvtColor(im, img, cv::COLOR_BGR2GRAY);
 
     // Wrap image data in a zbar image
-    Image image(im.cols, im.rows, "Y800", (uchar *)im.data, im.cols * im.rows);
+    Image image(im.cols, im.rows, "Y800", (uchar *)img.data, im.cols * im.rows);
 
     // Scan the image for barcodes and QRCodes
     int n = scanner.scan(image);

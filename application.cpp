@@ -24,6 +24,7 @@ Application::~Application()
 void Application::start()
 {
     while (waitKey(1) != 'q') {
+		timer.update();
         imagePublisher.captureImage();
     }
 }

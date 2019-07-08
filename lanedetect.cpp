@@ -3,7 +3,17 @@
 LaneDetect::LaneDetect(QObject *parent) : QObject(parent)
 {
 
+}
 
+Mat LaneDetect::thresholdImage(const mat& image) 
+{
+	Mat imgThresholded;
+	inRange(imgHSV, Scalar(Config::LOW_H, Config::LOW_S, Config::LOW_V), Scalar(Config::HIGH_H, Config::HIGH_S, Config::HIGH_V), imgThresholded);
+}
+
+void LaneDetect::findLane(const Mat& imgHSV)
+{
+	
 }
 
 void LaneDetect::detectWayPoint(const Mat &image)

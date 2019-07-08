@@ -10,8 +10,6 @@ void ImagePublisher::captureImage()
     capture >> image;
     resize(image, image, frameSize);
     emit showImage(image);
-    // Preprocess
-    cvtColor(image, image, cv::COLOR_BGR2GRAY);
 }
 
 void ImagePublisher::requestImageFromBarcodeScanner()

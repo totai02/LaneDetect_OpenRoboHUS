@@ -16,6 +16,8 @@ int main(int argc, char *argv[])
     Application app;
 
     app.start();
+	
+	delete app;
 
     destroyAllWindows();
 

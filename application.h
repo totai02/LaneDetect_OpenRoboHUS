@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include <QThread>
+
+#include "timer.h"
 #include "barcodescanner.h"
 #include "lanedetect.h"
 #include "imagepublisher.h"
@@ -28,6 +30,8 @@ public slots:
 private:
     void createConnect();
 
+	Timer timer;
+	
     WayPoint wayPoints;
     BarcodeVector barcodeResult;
 

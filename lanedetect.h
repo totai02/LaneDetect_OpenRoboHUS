@@ -5,6 +5,7 @@
 #include <QObject>
 #include <vector>
 
+#include "config.h"
 #include "types.h"
 
 class LaneDetect : public QObject
@@ -16,6 +17,8 @@ public:
 private:
     WayPoint wayPoints;
     void detectWayPoint(const Mat& image);
+	Mat thresholdImage(const mat& image);
+	void findLane(const Mat& imgHSV);
 
 signals:
     void requestImage();
