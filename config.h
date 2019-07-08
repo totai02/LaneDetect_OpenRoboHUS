@@ -15,6 +15,8 @@ public:
 	static int HIGH_H;
 	static int HIGH_S;
 	static int HIGH_V;
+	
+	static int SKY_LINE;
 };
 
 #endif // CONFIG_H

@@ -15,10 +15,10 @@ public:
     explicit LaneDetect(QObject *parent = 0);
 
 private:
-    WayPoint wayPoints;
     void detectWayPoint(const Mat& image);
-	Mat thresholdImage(const mat& image);
-	void findLane(const Mat& imgHSV);
+	Mat thresholdImage(const Mat& image);
+	void findLane(const Mat& img);
+	Mat birdViewTranform(const Mat& src);
 
 signals:
     void requestImage();
@@ -27,6 +27,10 @@ signals:
 public slots:
     void subscriberImage(const Mat& image);
     void startLoop();
+	
+private:
+    WayPoint wayPoints;
+	
 };
 
 #endif // LANEDETECT_H

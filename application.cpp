@@ -36,12 +36,12 @@ void Application::updateBarcode(const BarcodeVector& barcodeVector)
 }
 
 // SLOT nhan ket qua tu Lane Detect
-void Application::updateWayPoint(const WayPoint &wayPoints)
+void Application::updateWayPoint(const WayPoint& wayPoints)
 {
     this->wayPoints = wayPoints;
 }
 
-void Application::showResult(const Mat &image)
+void Application::showResult(const Mat& image)
 {
     Mat img = image.clone();
     for (int i = 0; i < barcodeResult.size(); i++) {

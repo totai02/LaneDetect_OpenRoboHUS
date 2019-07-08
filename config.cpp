@@ -3,6 +3,8 @@
 int Config::WIDTH = 320;
 int Config::HEIGHT = 240;
 
+int Config::SKY_LINE = 100;
+
 int Config::LOW_H = 0;
 int Config::LOW_S = 0;
 int Config::LOW_V = 0;
