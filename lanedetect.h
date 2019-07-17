@@ -8,6 +8,9 @@
 #include "config.h"
 #include "types.h"
 
+using namespace cv;
+using namespace std;
+
 class LaneDetect : public QObject
 {
     Q_OBJECT
@@ -17,8 +20,8 @@ public:
 private:
     void detectWayPoint(const Mat& image);
 	Mat thresholdImage(const Mat& image);
-	void findLane(const Mat& img);
-	Mat birdViewTranform(const Mat& src);
+    Mat findLane(const Mat& img);
+    void slidingWindow(const Mat& image);
 
 signals:
     void requestImage();
@@ -26,10 +29,12 @@ signals:
 
 public slots:
     void subscriberImage(const Mat& image);
+    void changeDir(int dir);
     void startLoop();
 	
 private:
     WayPoint wayPoints;
+    int dir;
 	
 };
 

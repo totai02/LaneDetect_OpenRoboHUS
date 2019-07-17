@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 
+#define LEFT 1
+#define RIGHT 2
+
 typedef struct
 {
   std::string type;

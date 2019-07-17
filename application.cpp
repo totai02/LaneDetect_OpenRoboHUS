@@ -1,4 +1,5 @@
 #include "application.h"
+#include <QDebug>
 
 // Contructor cua application, bao gom cac lenh khoi tao va connect SIGNAL & SLOT
 Application::Application(QObject *parent) : QObject(parent)
@@ -23,6 +24,8 @@ Application::~Application()
 // Khoi dong main thread: Lay anh tu thiet bi
 void Application::start()
 {
+    cameraControl.originState();
+    motorControl.init();
     while (waitKey(1) != 'q') {
 		timer.update();
         imagePublisher.captureImage();
@@ -39,16 +42,40 @@ void Application::updateBarcode(const BarcodeVector& barcodeVector)
 void Application::updateWayPoint(const WayPoint& wayPoints)
 {
     this->wayPoints = wayPoints;
+
+    float minError = 1000;
+    int idx = -1;
+
+    for (int i = 0; i < wayPoints.size(); i++)
+    {
+        if (wayPoints[i].y - Config::LOOK_AT < minError)
+        {
+            minError = wayPoints[i].y - Config::LOOK_AT;
+            idx = i;
+        }
+    }
+    if (idx != -1) {
+        float error = Config::WIDTH / 2.0f - (wayPoints[idx].x - Config::LANE_WIDTH / 2);
+        error = error / Config::WIDTH;
+        motorControl.moveForward(error * 2, Config::VELOCITY);
+        qDebug() << error;
+    }
 }
 
+// Hien thi anh nhan duoc tu camera, va hien thi ket qua cua barcode & lanedetect gan nhat
 void Application::showResult(const Mat& image)
 {
     Mat img = image.clone();
-    for (int i = 0; i < barcodeResult.size(); i++) {
+    for (int i = 0; i < barcodeResult.size(); i++)
+    {
         Point2f vertices[4];
         barcodeResult[i].bounding.points(vertices);
         for (int i = 0; i < 4; i++)
             line(img, vertices[i], vertices[(i+1)%4], Scalar(0,255,0), 2);
+    }
+    for (int i = 0; i < wayPoints.size(); i++)
+    {
+        circle(img, wayPoints[i], 1, Scalar(0,0,255), 2, 8, 0 );
     }
     imshow("Camera", img);
 }

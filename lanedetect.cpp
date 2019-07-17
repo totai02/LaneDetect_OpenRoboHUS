@@ -1,4 +1,5 @@
 #include "lanedetect.h"
+#include <QDebug>
 
 LaneDetect::LaneDetect(QObject *parent) : QObject(parent)
 {
@@ -7,63 +8,119 @@ LaneDetect::LaneDetect(QObject *parent) : QObject(parent)
 
 Mat LaneDetect::thresholdImage(const Mat& image) 
 {
-	Mat imgThresholded;
-	cvtColor(image, imgThresholded, COLOR_BGR2HSV);
-	inRange(imgHSV, Scalar(Config::LOW_H, Config::LOW_S, Config::LOW_V), Scalar(Config::HIGH_H, Config::HIGH_S, Config::HIGH_V), imgThresholded);
-	return imgThresholded;
+    Mat imgThresholded;
+    cvtColor(image, imgThresholded, COLOR_BGR2HSV);
+    inRange(imgThresholded, Scalar(Config::LOW_H, Config::LOW_S, Config::LOW_V), Scalar(Config::HIGH_H, Config::HIGH_S, Config::HIGH_V), imgThresholded);
+    return imgThresholded;
 }
 
-void LaneDetect::findLane(const Mat& img)
+Mat LaneDetect::findLane(const Mat& img)
 {
-	Mat result;
-	vector<vector<Point> > contours;
-    vector<Vec4i> hierarchy;
-	findContours( img, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-	float maxArea = 0;
-	for( int i = 0; i < contours.size(); i++ )
+    Mat result = Mat::zeros(img.size(), CV_8UC1);
+    std::vector<std::vector<Point> > contours;
+    std::vector<Vec4i> hierarchy;
+    findContours( img, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+
+    float maxArea = 0;
+    int areaIdx = -1;
+
+    for( int i = 0; i < contours.size(); i++ )
     {
-		if (contourArea(Mat(contours[i])) > radius[i] * radius[i] * M_PI * 0.6)
-		{
-			
-		}
+        int top = img.size().height;
+        int bottom = 0;
+        for (int j = 0; j < contours[i].size(); j++)
+        {
+            if (contours[i][j].y < top)
+            {
+                top = contours[i][j].y;
+            }
+            if (contours[i][j].y > bottom)
+            {
+                bottom = contours[i][j].y;
+            }
+        }
+
+        if (top < Config::SKY_LINE && bottom < Config::HEIGHT / 3 * 2) continue;
+
+        float area = boundingRect(Mat(contours[i])).area();
+        if (area > maxArea)
+        {
+            maxArea = area;
+            areaIdx = i;
+        }
     }
+    if (areaIdx != -1) drawContours(result, contours, areaIdx, 255, CV_FILLED, 8, hierarchy);
+    return result;
 }
 
-void transform(Point2f* src_vertices, Point2f* dst_vertices, Mat& src, Mat &dst){
-    Mat M = getPerspectiveTransform(src_vertices, dst_vertices);
-    warpPerspective(src, dst, M, dst.size(), INTER_LINEAR, BORDER_CONSTANT);
-}
-
-Mat DetectLane::birdViewTranform(const Mat& src)
+int* lookUpTable(const Mat& image, int bottom, int top)
 {
-    Point2f src_vertices[4];
+    int *lut = new int[image.cols];
 
-    int width = src.size().width;
-    int height = src.size().height;
+    for(int i = 0; i < image.cols;i++)
+    {
+        lut[i] = 0;
+        for(int j = bottom;j < top;j++)
+        {
+            lut[i] += image.data[image.step * j + i ];
+        }
+    }
+    return lut;
+}
 
-    src_vertices[0] = Point(0, Config::SKY_LINE);
-    src_vertices[1] = Point(width, Config::SKY_LINE);
-    src_vertices[2] = Point(width, height);
-    src_vertices[3] = Point(0, height);
+int max(int a, int b) {return a > b ? a: b;}
+int min(int a, int b) {return a < b ? a: b;}
 
-    Point2f dst_vertices[4];
-    dst_vertices[0] = Point(0, 0);
-    dst_vertices[1] = Point(BIRDVIEW_WIDTH, 0);
-    dst_vertices[2] = Point(BIRDVIEW_WIDTH - 105, BIRDVIEW_HEIGHT);
-    dst_vertices[3] = Point(105, BIRDVIEW_HEIGHT);
+void LaneDetect::slidingWindow(const Mat &image)
+{
+    int *lut = lookUpTable(image, 0, image.rows);
+    int cdf[image.cols];
+    cdf[0] = lut[0];
+    for (int i = 1; i < image.cols; i++)
+    {
+        cdf[i] = cdf[i - 1] + lut[i];
+    }
 
-    Mat M = getPerspectiveTransform(src_vertices, dst_vertices);
+    int idx = 0;
+    int maxPixel = 0;
+    for (int i = 0; i < image.cols - Config::WINDOW_WIDTH; i++)
+    {
+        if (cdf[i + Config::WINDOW_WIDTH] - cdf[i] > maxPixel)
+        {
+            maxPixel = cdf[i + Config::WINDOW_WIDTH] - cdf[i];
+            idx = i;
+        }
+    }
+    int level = image.rows - Config::WINDOW_HEIGHT;
+    while (level > 0)
+    {
+        int *hCount = lookUpTable(image, level, level + Config::WINDOW_HEIGHT);
+        maxPixel = 0;
+        cdf[0] = hCount[0];
+        for (int i = 1; i < image.cols; i++)
+        {
+            cdf[i] = cdf[i - 1] + hCount[i];
+        }
 
-    Mat dst(BIRDVIEW_HEIGHT, BIRDVIEW_WIDTH, CV_8UC1);
-    warpPerspective(src, dst, M, dst.size(), INTER_LINEAR, BORDER_CONSTANT);
-
-    return dst;
+        for (int i = max(0, idx - Config::WINDOW_WIDTH); i < min(image.cols - Config::WINDOW_WIDTH, idx + Config::WINDOW_WIDTH); i++)
+        {
+            if (cdf[i + Config::WINDOW_WIDTH] - cdf[i] > maxPixel)
+            {
+                maxPixel = cdf[i + Config::WINDOW_WIDTH] - cdf[i];
+                idx = i;
+            }
+        }
+        if (maxPixel > 3) wayPoints.push_back(Point(idx + Config::WINDOW_WIDTH / 2, level + Config::WINDOW_HEIGHT / 2));
+        level -= Config::WINDOW_HEIGHT;
+    }
 }
 
 void LaneDetect::detectWayPoint(const Mat& image)
 {
     wayPoints.clear();
-	Mat imgThresholded = thresholdImage(image);
+    Mat dst = thresholdImage(image);
+    dst = findLane(dst);
+    slidingWindow(dst);
 }
 
 void LaneDetect::subscriberImage(const Mat& image)
@@ -73,12 +130,17 @@ void LaneDetect::subscriberImage(const Mat& image)
         emit laneDetected(wayPoints);
         emit requestImage();
     } else {
-        // Duy tri yeu cau lay anh
         emit requestImage();
     }
+}
+
+void LaneDetect::changeDir(int dir)
+{
+    this->dir = dir;
 }
 
 void LaneDetect::startLoop()
 {
     emit requestImage();
 }
+

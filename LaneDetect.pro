@@ -13,7 +13,10 @@ SOURCES += main.cpp \
     barcodescanner.cpp \
     lanedetect.cpp \
     imagepublisher.cpp \
-    config.cpp
+    config.cpp \
+    timer.cpp \
+    motorcontrol.cpp \
+    cameracontrol.cpp
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -21,7 +24,7 @@ SOURCES += main.cpp \
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 
-LIBS += `pkg-config opencv --cflags --libs` -lzbar
+LIBS += `pkg-config opencv --cflags --libs` -lzbar -lpigpio -lwiringPi
 
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -34,4 +37,7 @@ HEADERS += \
     lanedetect.h \
     types.h \
     imagepublisher.h \
-    config.h
+    config.h \
+    timer.h \
+    motorcontrol.h \
+    cameracontrol.h

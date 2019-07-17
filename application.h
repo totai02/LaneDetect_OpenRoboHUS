@@ -8,6 +8,8 @@
 #include "barcodescanner.h"
 #include "lanedetect.h"
 #include "imagepublisher.h"
+#include "motorcontrol.h"
+#include "cameracontrol.h"
 
 using namespace cv;
 
@@ -31,6 +33,8 @@ private:
     void createConnect();
 
 	Timer timer;
+    CameraControl cameraControl;
+    MotorControl motorControl;
 	
     WayPoint wayPoints;
     BarcodeVector barcodeResult;

@@ -17,8 +17,6 @@ int main(int argc, char *argv[])
 
     app.start();
 	
-	delete app;
-
     destroyAllWindows();
 
     return 0;
